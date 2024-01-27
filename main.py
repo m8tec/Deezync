@@ -11,6 +11,7 @@ import yaml
 
 from pathlib import Path
 import os
+import time
 
 
 def deezer_login():
@@ -200,3 +201,7 @@ deezer_playlists = fetch_deezer_playlists()
 deezer_playlist_missing_tracks = deezer_plex_sync()
 # download missing tracks
 download_deezer_playlists()
+
+# resync playlists after 10 minutes, give Plex time to index new files
+time.sleep(600)
+deezer_plex_sync()
