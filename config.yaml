@@ -1,7 +1,8 @@
-plex_token: your_plex_token
-plex_server: your_plex_server
-plex_library: your_plex_music_library
+plex_token:
+plex_server:
+plex_library:
 deezer_playlists:
-  - id: your_deezer_playlist_id
+  - id: # your deezer playlist id
     bitrate: 9
     delete_after_removed: 0
+    active: 1

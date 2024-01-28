@@ -11,7 +11,14 @@ import yaml
 
 from pathlib import Path
 import os
+import shutil
 import time
+
+import logging
+
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 def deezer_login():
@@ -33,8 +40,24 @@ def load_download_arl():
     return arl
 
 
+def load_deezync_config():
+    # Check if the source file exists
+    config_path = '/config/config.yaml'
+    if not os.path.isfile(config_path):
+        # If the file doesn't exist, copy it
+        shutil.copy('config.yaml', config_path)
+        shutil.copy('deemix/config.json', '/config/deemix/config.json')
+
+        logging.info(f"Restored template deemix/config.yaml, please prepare configs!")
+
+    logging.info(f"{config_path} already exists. Loading config...")
+    with open(config_path, 'r') as deezync_config:
+        loaded_config = yaml.safe_load(deezync_config)
+    return loaded_config
+
+
 # Deemix
-deemix_folder = Path('./deemix')
+deemix_folder = Path('/config/deemix')
 settings = load_deemix_settings(deemix_folder)
 downloadArl = load_download_arl()
 
@@ -51,7 +74,7 @@ def download(links, bitrate):
             downloadObject = generateDownloadObject(dz, link, bitrate)
         except GenerationError as e:
             # skip link if errors occurs
-            print(f"{e.link}: {e.message}")
+            logging.error(f"{e.link}: {e.message}")
             continue
         # append single object to the downloadObjects list
         downloadObjects.append(downloadObject)
@@ -86,19 +109,19 @@ def download_deezer_playlists():
                 continue
             downloaded_tracks.append(track['id'])
 
-            print(f"Downloading {track['title']} by {track['artist']['name']}...")
+            logging.info(f"Downloading {track['title']} by {track['artist']['name']}...")
 
             # download track
             download([track['link']], playlist_config['bitrate'])
             download_count = download_count + 1
 
-            print(f"Downloaded {track['title']} by {track['artist']['name']}")
+            logging.info(f"Downloaded {track['title']} by {track['artist']['name']}")
 
-    print(f"Downloaded {download_count} new tracks")
+    logging.info(f"Downloaded {download_count} new tracks")
 
 
 def fetch_deezer_playlists():
-    print("Fetching playlists...")
+    logging.info("Fetching playlists...")
     playlists = []
     for playlist_config in deezer_playlist_configs:
         # skip if set inactive by user
@@ -110,23 +133,27 @@ def fetch_deezer_playlists():
             playlist = dz.api.get_playlist(playlist_config['id'])
             playlists.append(playlist)
         except Exception as e:
-            print(f"Failed to fetch playlist {playlist_config['id']}: {e}")
+            logging.info(f"Failed to fetch playlist {playlist_config['id']}: {e}")
 
-    print(f"Fetched {len(playlists)} playlists")
+    logging.info(f"Fetched {len(playlists)} playlists")
     return playlists
 
 
 def deezer_plex_sync():
-    print("Logging in to Plex...")
+    if not config['plex_token'] or not config['plex_token'] or not config['plex_token']:
+        logging.warning("Missing Plex credentials, skipping sync")
+        return
+
+    logging.info("Logging in to Plex...")
     account = MyPlexAccount(token=config['plex_token'])
-    print(f"Connecting to server {config['plex_server']}...")
+    logging.info(f"Connecting to server {config['plex_server']}...")
     plex_server = account.resource(config['plex_server']).connect()
-    print("Connected to Plex")
+    logging.info("Connected to Plex")
 
     missing_by_playlist = {}
 
     for deezer_playlist in deezer_playlists:
-        print(f"Syncing Deezer playlist '{deezer_playlist['title']}' to Plex...")
+        logging.info(f"Syncing Deezer playlist '{deezer_playlist['title']}' to Plex...")
 
         # check if Plex playlist already exists
         plex_playlist = None
@@ -144,7 +171,8 @@ def deezer_plex_sync():
             matching_tracks = [
                 t for t in missing_by_playlist[deezer_playlist['id']]
                 if (t['title'].lower() == track.title.lower() or
-                    t['title'].lower().replace('?', '_').replace('/', '_') == track.title.lower()) and
+                    t['title'].lower().replace('?', '_').replace('/', '_').replace('[', '(').replace(']', ')')
+                    == track.title.lower()) and
                    (t['artist']['name'].lower() in track.artist().title.replace('’', '\'').lower() or
                     t['artist']['name'].lower() in str(track.originalTitle).replace('’', '\'').lower())
             ]
@@ -156,8 +184,8 @@ def deezer_plex_sync():
                     # append the matching track to found_plex_tracks
                     found_plex_tracks.append(track)
             # for matching_track in matching_tracks:
-            # print(f"Matching track title: {matching_track['title']}")
-            # print(f"Matching track artist: {matching_track['artist']['name']}/{track.artist().title}")
+            # logging.debug(f"Matching track title: {matching_track['title']}")
+            # logging.debug(f"Matching track artist: {matching_track['artist']['name']}/{track.artist().title}")
 
         # add missing tracks to the end of the playlist
         if len(found_plex_tracks) > 0:
@@ -166,7 +194,7 @@ def deezer_plex_sync():
             else:
                 # if the playlist does not exist, create it
                 plex_playlist = plex_server.createPlaylist(deezer_playlist['title'], items=found_plex_tracks)
-                print(f"Created Plex playlist: {deezer_playlist['title']}")
+                logging.info(f"Created Plex playlist: {deezer_playlist['title']}")
 
         # update playlist cover
         plex_playlist.uploadPoster(deezer_playlist['picture_xl'])
@@ -174,20 +202,20 @@ def deezer_plex_sync():
         if deezer_playlist['description']:
             plex_playlist.editSummary(deezer_playlist['description'])
 
-        print(
+        logging.info(
             f"Finished syncing '{deezer_playlist['title']}' playlist, added: {len(found_plex_tracks)} items. "
             f"Missing tracks ({len(missing_by_playlist[deezer_playlist['id']])}):")
         for track in missing_by_playlist[deezer_playlist['id']]:
-            print(f"Title: {track['title']}, artist: {track['artist']['name']}")
+            logging.debug(f"Title: {track['title']}, artist: {track['artist']['name']}")
 
-    print("Synced Deezer playlists to Plex")
+    logging.info("Synced Deezer playlists to Plex")
     return missing_by_playlist
 
 
 # Load Deezync configuration from the YAML file
-with open('config.yaml', 'r') as deezync_config:
-    config = yaml.safe_load(deezync_config)
+config = load_deezync_config()
 deezer_playlist_configs = config['deezer_playlists']
+print(deezer_playlist_configs)
 
 # check music path
 music_path = "/music"
@@ -196,17 +224,27 @@ if not os.path.exists(music_path):
 
 downloaded_tracks = []
 
+if len(deezer_playlist_configs) < 1:
+    logging.info("No sync playlist configured, quitting")
+    quit()
+
 # fetch playlists to sync
 deezer_playlists = fetch_deezer_playlists()
-# sync playlists to plex and find missing tracks
+if len(deezer_playlists) < 1:
+    logging.info("No playlists fetched, quitting")
+    quit()
+
+# sync playlists to Plex and find missing tracks
 deezer_playlist_missing_tracks = deezer_plex_sync()
+
 # download missing tracks
-download_deezer_playlists()
+if deezer_playlist_missing_tracks:
+    download_deezer_playlists()
 
 # resync playlists after 10 minutes, give Plex time to index new files
 seconds = 600
-print(f"Waiting {seconds} seconds until playlist sync...")
+logging.info(f"Waiting {seconds} seconds until playlist sync...")
 time.sleep(seconds)
 deezer_plex_sync()
 
-print("Finished script run")
+logging.info("Finished Deezer to Plex playlist sync")
