@@ -17,7 +17,7 @@ Deezync will create the needed config files at `/config` on its first run.
    - Id: Find the Deezer playlist id by opening it in a browser and inspect the end of the link
    - Bitrate: FLAC = 9, MP3_320 = 3, MP3_128 = 1
    - Make sure that your monitored playlists are not private
-5. Paste in your Deezer arl at `/config/Deemix/.arl`
+5. Paste in your Deezer arl at `/config/Deemix/.arl`. [Where is my Deezer arl?](https://github.com/nathom/streamrip/wiki/Finding-Your-Deezer-ARL-Cookie)
 6. Configure Plex to automatically detect new files. Tick the following settings:
    - Plex > Settings > Library > "Scan my library automatically"
    - Plex > Settings > Library > "Run a partial scan when changes are detected"
