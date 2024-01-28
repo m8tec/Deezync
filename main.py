@@ -215,7 +215,6 @@ def deezer_plex_sync():
 # Load Deezync configuration from the YAML file
 config = load_deezync_config()
 deezer_playlist_configs = config['deezer_playlists']
-print(deezer_playlist_configs)
 
 # check music path
 music_path = "/music"
