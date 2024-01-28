@@ -15,14 +15,28 @@ import time
 
 
 def deezer_login():
-    global dz
+    deezer = deemixDeezer()
+    deezer.login_via_arl(downloadArl.strip())
 
-    if not dz:
-        dz = deemixDeezer()
-        dz.login_via_arl(downloadArl.strip())
+    return deezer
 
-    return dz
 
+def load_download_arl():
+    if (deemix_folder / '.arl').is_file():
+        with open(deemix_folder / '.arl', 'r', encoding="utf-8") as f:
+            arl = f.readline().rstrip("\n").strip()
+    else:
+        raise Exception("No arl provided")
+    with open(deemix_folder / '.arl', 'w', encoding="utf-8") as f:
+        f.write(arl)
+
+    return arl
+
+
+# Deemix
+deemix_folder = Path('./deemix')
+settings = load_deemix_settings(deemix_folder)
+downloadArl = load_download_arl()
 
 # login to deezer download account
 dz: deemixDeezer = deezer_login()
@@ -45,18 +59,6 @@ def download(links, bitrate):
     # download objects
     for obj in downloadObjects:
         Downloader(dz, obj, settings).start()
-
-
-def load_download_arl():
-    if (deemix_folder / '.arl').is_file():
-        with open(deemix_folder / '.arl', 'r', encoding="utf-8") as f:
-            arl = f.readline().rstrip("\n").strip()
-    else:
-        raise Exception("No arl provided")
-    with open(deemix_folder / '.arl', 'w', encoding="utf-8") as f:
-        f.write(arl)
-
-    return arl
 
 
 def file_contains_string(folder_path, search_string):
@@ -99,6 +101,11 @@ def fetch_deezer_playlists():
     print("Fetching playlists...")
     playlists = []
     for playlist_config in deezer_playlist_configs:
+        # skip if set inactive by user
+        if playlist_config['active'] == 0:
+            continue
+
+        # fetch playlist
         try:
             playlist = dz.api.get_playlist(playlist_config['id'])
             playlists.append(playlist)
@@ -137,7 +144,7 @@ def deezer_plex_sync():
             matching_tracks = [
                 t for t in missing_by_playlist[deezer_playlist['id']]
                 if (t['title'].lower() == track.title.lower() or
-                    t['title'].lower().replace('?', '_') == track.title.lower()) and
+                    t['title'].lower().replace('?', '_').replace('/', '_') == track.title.lower()) and
                    (t['artist']['name'].lower() in track.artist().title.replace('’', '\'').lower() or
                     t['artist']['name'].lower() in str(track.originalTitle).replace('’', '\'').lower())
             ]
@@ -174,12 +181,11 @@ def deezer_plex_sync():
             print(f"Title: {track['title']}, artist: {track['artist']['name']}")
 
     print("Synced Deezer playlists to Plex")
-    print(missing_by_playlist)
     return missing_by_playlist
 
 
 # Load Deezync configuration from the YAML file
-with open('.venv/config.yaml', 'r') as deezync_config:
+with open('config.yaml', 'r') as deezync_config:
     config = yaml.safe_load(deezync_config)
 deezer_playlist_configs = config['deezer_playlists']
 
@@ -187,11 +193,6 @@ deezer_playlist_configs = config['deezer_playlists']
 music_path = "/music"
 if not os.path.exists(music_path):
     raise FileNotFoundError(f"The specified music path '{music_path}' does not exist.")
-
-# Deemix
-deemix_folder = Path('.venv/deemix')
-settings = load_deemix_settings(deemix_folder)
-downloadArl = load_download_arl()
 
 downloaded_tracks = []
 
@@ -203,5 +204,9 @@ deezer_playlist_missing_tracks = deezer_plex_sync()
 download_deezer_playlists()
 
 # resync playlists after 10 minutes, give Plex time to index new files
-time.sleep(600)
+seconds = 600
+print(f"Waiting {seconds} seconds until playlist sync...")
+time.sleep(seconds)
 deezer_plex_sync()
+
+print("Finished script run")
