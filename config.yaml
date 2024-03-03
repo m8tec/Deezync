@@ -6,3 +6,4 @@ deezer_playlists:
     bitrate: 9
     delete_after_removed: 0
     active: 1
+    sync_interval_seconds: 3600
