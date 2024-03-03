@@ -1,7 +1,17 @@
-# Deezync
+
+<p align="center">
+   <img width="175" alt="deezync_350" src="https://github.com/m8tec/Deezync/assets/38794725/2199f1a6-3548-4fe2-b007-423759ece70c">
+</p>
+<h1 align="center">Deezync</h1>
+
+<div align="center">
+   
 [![discord](https://img.shields.io/discord/730547174936674304?label=Discord)](https://discord.gg/4cJczdyu9n)
 
+
 Deezync syncs Deezer playlists to Plex and uses Deemix to download missing tracks.
+
+</div>
 
 ## Installation
 1. Bind container path `/music` to the location of your Plex music library
