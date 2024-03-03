@@ -16,12 +16,18 @@ Deezync will create the needed config files at `/config` on its first run.
 2. Add and configure monitored playlists
    - Id: Find the Deezer playlist id by opening it in a browser and inspect the end of the link
    - Bitrate: FLAC = 9, MP3_320 = 3, MP3_128 = 1
-   - Make sure that your monitored playlists are not private
+   - Delete after removed: This is not yet implemented
+   - Active: Disable playlist for syncing. Active = 1, inactive = 0
+   - Sync interval seconds: The interval in which Deezync should check for playlist changes
+   - Make sure that your monitored playlists are not private!
 5. Paste in your Deezer arl at `/config/Deemix/.arl`. [Where is my Deezer arl?](https://github.com/nathom/streamrip/wiki/Finding-Your-Deezer-ARL-Cookie)
 6. Configure Plex to automatically detect new files. Tick the following settings:
    - Plex > Settings > Library > "Scan my library automatically"
    - Plex > Settings > Library > "Run a partial scan when changes are detected"
    - Plex > Settings > Library > "Include music libraries in automatic updates"
+7. Configure Plex to prefer local metadata, so Deezync can find the downloaded tracks:
+   - Plex > Your music library > Manage Library > Edit > Advanced > Agent > Personal Media Artists
+   - Plex > Your music library > Manage Library > Edit > Advanced > Prefer local metadata
 
 ### Add to an existing library
 By default Deemix will use the suggested file naming scheme and skip the download of missing tracks if their download path already exists. In order to prevent file duplicates, make sure to properly setup your naming conventions in the `/config/deemix/config.json` config.
