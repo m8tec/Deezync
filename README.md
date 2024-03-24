@@ -26,7 +26,7 @@ Deezync will create the needed config files at `/config` on its first run.
 2. Add and configure monitored playlists
    - Id: Find the Deezer playlist id by opening it in a browser and inspect the end of the link
    - Bitrate: FLAC = 9, MP3_320 = 3, MP3_128 = 1
-   - Delete after removed: This is not yet implemented
+   - Delete unmatched from playlist: Delete tracks from Plex playlist if not matched with Deezer track
    - Active: Disable playlist for syncing. Active = 1, inactive = 0
    - Sync interval seconds: The interval in which Deezync should check for playlist changes
    - Make sure that your monitored playlists are not private!
