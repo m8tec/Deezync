@@ -105,27 +105,40 @@ def connect_plex():
 def deezer_plex_sync(deezer_playlists):
     global plex_server
 
+    # get all tracks + playlists in Plex library
+    plex_playlists = plex_server.playlists()
+    all_library_tracks = plex_server.library.section(config['plex_library']).all(libtype='track')
+
     missing_by_playlist = {}
 
     sync_playlist_counter = 1
     for deezer_playlist in deezer_playlists:
-        logging.info(f"Syncing {sync_playlist_counter}/{len(deezer_playlists)} Deezer playlisty "
+        for looped_config in deezer_playlist_configs:
+            if looped_config['id'] == deezer_playlist['id']:
+                playlist_config = looped_config
+                break
+
+        logging.info(f"Syncing {sync_playlist_counter}/{len(deezer_playlists)} Deezer playlist "
                      f"'{deezer_playlist['title']}' to Plex...")
         sync_playlist_counter += 1
 
         # check if Plex playlist already exists
         plex_playlist = None
-        plex_playlist_titles = None
-        for playlist in plex_server.playlists():
+        plex_playlist_tracks = None
+        plex_playlist_unmatched_tracks = None
+
+        for playlist in plex_playlists:
             if deezer_playlist['title'] == playlist.title:
                 plex_playlist = playlist
-                plex_playlist_titles = {item.title for item in plex_playlist.items()}
+                plex_playlist_tracks = plex_playlist.items()
+                plex_playlist_unmatched_tracks = plex_playlist_tracks.copy()
                 break
 
         missing_by_playlist[deezer_playlist['id']] = deezer_playlist['tracks']['data']
         found_plex_tracks = []
 
-        for track in plex_server.library.section(config['plex_library']).all(libtype='track'):
+        # search track match in Plex library
+        for track in all_library_tracks:
             matching_tracks = [
                 t for t in missing_by_playlist[deezer_playlist['id']]
                 if (t['title'].lower() == track.title.lower() or
@@ -134,36 +147,52 @@ def deezer_plex_sync(deezer_playlists):
                    (t['artist']['name'].lower() in track.artist().title.replace('’', '\'').lower() or
                     t['artist']['name'].lower() in str(track.originalTitle).replace('’', '\'').lower())
             ]
+
+            # process matching track if found
             if matching_tracks:
+                # use first match
                 matching_track = matching_tracks[0]
-                # remove the matching track from missing_tracks
+
+                # remove matching track from missing_tracks
                 missing_by_playlist[deezer_playlist['id']].remove(matching_track)
-                if not plex_playlist_titles or track.title not in plex_playlist_titles:
-                    # append the matching track to found_plex_tracks
+
+                # remove matching track from unmatched tracks in Plex playlist
+                if any(playlist_track.title == track.title for playlist_track in plex_playlist_unmatched_tracks):
+                    plex_playlist_unmatched_tracks.remove(track)
+
+                # add matching track to found_plex_tracks if not already in playlist
+                if not plex_playlist_tracks or track.title not in plex_playlist_tracks:
                     found_plex_tracks.append(track)
+
             # for matching_track in matching_tracks:
             # logging.debug(f"Matching track title: {matching_track['title']}")
             # logging.debug(f"Matching track artist: {matching_track['artist']['name']}/{track.artist().title}")
+
+        removed_counter = 0
 
         # add missing tracks to the end of the playlist
         if len(found_plex_tracks) > 0:
             if plex_playlist:
                 plex_playlist.addItems(found_plex_tracks)
+                if playlist_config['delete_unmatched_from_playlist'] == 1:
+                    plex_playlist.removeItems(plex_playlist_unmatched_tracks)
+                    removed_counter = len(plex_playlist_unmatched_tracks)
             else:
                 # if the playlist does not exist, create it
                 plex_playlist = plex_server.createPlaylist(deezer_playlist['title'], items=found_plex_tracks)
                 logging.info(f"Created Plex playlist: {deezer_playlist['title']}")
 
         # update playlist cover
-        plex_playlist.uploadPoster(deezer_playlist['picture_xl'])
-        # update description
-        if deezer_playlist['description']:
-            plex_playlist.editSummary(deezer_playlist['description'])
+        if playlist_config['sync_cover_description'] == 1:
+            plex_playlist.uploadPoster(deezer_playlist['picture_xl'])
+            # update description
+            if deezer_playlist['description']:
+                plex_playlist.editSummary(deezer_playlist['description'])
 
         # logging
         logging.info(
-            f"Synced '{deezer_playlist['title']}' playlist. Added: {len(found_plex_tracks)}, missing: "
-            f"{len(missing_by_playlist[deezer_playlist['id']])}")
+            f"Synced '{deezer_playlist['title']}' playlist. Added: {len(found_plex_tracks)}, removed: "
+            f"{removed_counter}, missing: {len(missing_by_playlist[deezer_playlist['id']])}")
         for track in missing_by_playlist[deezer_playlist['id']]:
             logging.debug(f"Missing title: {track['title']}, artist: {track['artist']['name']}")
 
@@ -255,7 +284,7 @@ def loop():
 
         if deezer_playlist_missing_tracks:
             # download missing tracks
-            logging.info(f"Downloading {len(deezer_playlist_missing_tracks)} missing tracks")
+            logging.info(f"Downloading missing tracks")
             download_deezer_playlists(deezer_playlist_missing_tracks)
 
             # give Plex time to index new files
