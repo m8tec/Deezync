@@ -1,9 +1,10 @@
-plex_token:
-plex_server:
-plex_library:
+plex_token: # token of your Plex server
+plex_server: # name of your Plex server
+plex_library: # name of your Plex music library
 deezer_playlists:
   - id: # your deezer playlist id
-    bitrate: 9
-    delete_after_removed: 0
-    active: 1
-    sync_interval_seconds: 3600
+    bitrate: 9 # FLAC = 9, MP3_320 = 3, MP3_128 = 1
+    delete_unmatched_from_playlist: 0 # delete unmatched tracks from your Plex playlist
+    active: 1 # enable/disable this playlist for sync
+    sync_interval_seconds: 3600 # sync this playlist every x seconds
+    sync_cover_description: 1 # sync cover + description from Deezer to Plex
