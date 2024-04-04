@@ -157,7 +157,8 @@ def deezer_plex_sync(deezer_playlists):
                 missing_by_playlist[deezer_playlist['id']].remove(matching_track)
 
                 # remove matching track from unmatched tracks in Plex playlist
-                if any(playlist_track.title == track.title for playlist_track in plex_playlist_unmatched_tracks):
+                if (plex_playlist_unmatched_tracks and
+                        any(playlist_track.title == track.title for playlist_track in plex_playlist_unmatched_tracks)):
                     plex_playlist_unmatched_tracks.remove(track)
 
                 # add matching track to found_plex_tracks if not already in playlist
@@ -182,12 +183,12 @@ def deezer_plex_sync(deezer_playlists):
                 plex_playlist = plex_server.createPlaylist(deezer_playlist['title'], items=found_plex_tracks)
                 logging.info(f"Created Plex playlist: {deezer_playlist['title']}")
 
-        # update playlist cover
-        if playlist_config['sync_cover_description'] == 1:
-            plex_playlist.uploadPoster(deezer_playlist['picture_xl'])
-            # update description
-            if deezer_playlist['description']:
-                plex_playlist.editSummary(deezer_playlist['description'])
+            # update playlist cover
+            if playlist_config['sync_cover_description'] == 1:
+                plex_playlist.uploadPoster(deezer_playlist['picture_xl'])
+                # update description
+                if deezer_playlist['description']:
+                    plex_playlist.editSummary(deezer_playlist['description'])
 
         # logging
         logging.info(
