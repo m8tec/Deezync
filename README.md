@@ -6,8 +6,8 @@
 
 <div align="center">
    
-[![discord](https://img.shields.io/discord/730547174936674304?label=Discord)](https://discord.gg/4cJczdyu9n)
-
+[![Static Badge](https://img.shields.io/badge/Join-Discord-blue?color=%237289da)](https://discord.gg/4cJczdyu9n)
+[![Docker Pulls](https://img.shields.io/docker/pulls/m8tec/deezync)](https://hub.docker.com/repository/docker/m8tec/deezync)
 
 Deezync syncs Deezer playlists to Plex and uses Deemix to download missing tracks.
 

@@ -18,7 +18,7 @@
   "queueConcurrency": 3,
   "maxBitrate": "9",
   "feelingLucky": false,
-  "fallbackBitrate": false,
+  "fallbackBitrate": true,
   "fallbackSearch": false,
   "fallbackISRC": false,
   "logErrors": true,
