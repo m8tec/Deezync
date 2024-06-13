@@ -1,0 +1,2 @@
+[console_scripts]
+deemix = deemix.__main__:download

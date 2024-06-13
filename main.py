@@ -141,10 +141,12 @@ def deezer_plex_sync(deezer_playlists):
         for track in all_library_tracks:
             matching_tracks = [
                 t for t in missing_by_playlist[deezer_playlist['id']]
+
                 if (t['title'].lower() == track.title.lower() or
                     t['title'].lower().replace('?', '_').replace('/', '_').replace('[', '(').replace(']', ')')
                     == track.title.lower()) and
-                   (t['artist']['name'].lower() in track.artist().title.replace('’', '\'').lower() or
+                   ((track.artist()
+                     and t['artist']['name'].lower() in track.artist().title.replace('’', '\'').lower()) or
                     t['artist']['name'].lower() in str(track.originalTitle).replace('’', '\'').lower())
             ]
 
@@ -157,12 +159,12 @@ def deezer_plex_sync(deezer_playlists):
                 missing_by_playlist[deezer_playlist['id']].remove(matching_track)
 
                 # remove matching track from unmatched tracks in Plex playlist
-                if (plex_playlist_unmatched_tracks and
-                        any(playlist_track.title == track.title for playlist_track in plex_playlist_unmatched_tracks)):
+                if plex_playlist_unmatched_tracks and track in plex_playlist_tracks:
                     plex_playlist_unmatched_tracks.remove(track)
 
                 # add matching track to found_plex_tracks if not already in playlist
-                if not plex_playlist_tracks or track.title not in plex_playlist_tracks:
+                if (not plex_playlist_tracks or
+                        not any(playlist_track.ratingKey == track.ratingKey for playlist_track in plex_playlist_tracks)):
                     found_plex_tracks.append(track)
 
             # for matching_track in matching_tracks:

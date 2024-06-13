@@ -10,5 +10,9 @@ COPY . /app
 # Install any needed packages specified in requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Use modified deemix package with fix
+COPY local_packages/deemix /app/local_packages/deemix
+RUN pip install /app/local_packages/deemix
+
 # Run script.py when the container launches
 CMD ["python", "./main.py"]
