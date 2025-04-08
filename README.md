@@ -1,6 +1,6 @@
 
 <p align="center">
-   <img width="175" alt="deezync_350" src="https://github.com/m8tec/Deezync/assets/38794725/2199f1a6-3548-4fe2-b007-423759ece70c">
+   <img width="175" alt="deezync_350" src="https://github.com/user-attachments/assets/c3b2f24d-e277-4683-bc9c-9efa00d16681">
 </p>
 <h1 align="center">Deezync</h1>
 
